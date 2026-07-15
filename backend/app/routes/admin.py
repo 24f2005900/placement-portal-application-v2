@@ -49,3 +49,63 @@ def students():
     students = Student.query.all()
 
     return jsonify([s.to_dict() for s in students])
+
+@admin_bp.put("/company/<int:company_id>/approve")
+@jwt_required()
+def approve_company(company_id):
+
+    if not admin_required():
+        return jsonify({"message": "Forbidden"}), 403
+
+    company = Company.query.get_or_404(company_id)
+
+    company.approved = True
+
+    db.session.commit()
+
+    return jsonify({"message": "Company approved"})
+
+@admin_bp.put("/company/<int:company_id>/blacklist")
+@jwt_required()
+def blacklist_company(company_id):
+
+    if not admin_required():
+        return jsonify({"message": "Forbidden"}), 403
+
+    company = Company.query.get_or_404(company_id)
+
+    company.blacklisted = True
+
+    db.session.commit()
+
+    return jsonify({"message": "Company blacklisted"})
+
+@admin_bp.put("/drive/<int:drive_id>/approve")
+@jwt_required()
+def approve_drive(drive_id):
+
+    if not admin_required():
+        return jsonify({"message": "Forbidden"}), 403
+
+    drive = Drive.query.get_or_404(drive_id)
+
+    drive.approved = True
+
+    db.session.commit()
+
+    return jsonify({"message": "Drive approved"})
+
+@admin_bp.put("/student/<int:student_id>/deactivate")
+@jwt_required()
+def deactivate_student(student_id):
+
+    if not admin_required():
+        return jsonify({"message": "Forbidden"}), 403
+
+    student = Student.query.get_or_404(student_id)
+
+    student.user.is_active = False
+
+    db.session.commit()
+
+    return jsonify({"message": "Student deactivated"})
