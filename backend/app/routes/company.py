@@ -106,12 +106,40 @@ def view_applicants():
     if not company:
         return jsonify({"message": "Unauthorized"}), 403
 
-    applications = (
-        Application.query
+    query = (
+    Application.query
         .join(Application.drive)
-        .filter(Drive.company_id == company.id)
-        .all()
+        .join(Application.student)
+        .filter(
+            Drive.company_id == company.id
+        )
     )
+
+    status = request.args.get("status")
+    department = request.args.get("department")
+    name = request.args.get("name")
+
+    if status:
+        try:
+            query = query.filter(
+                Application.status == ApplicationStatus(status)
+            )
+        except ValueError:
+            return jsonify({
+                "message": "Invalid status"
+            }), 400
+
+    if department:
+        query = query.filter(
+            Student.department.ilike(f"%{department}%")
+        )
+
+    if name:
+        query = query.filter(
+            Student.full_name.ilike(f"%{name}%")
+        )
+
+    applications = query.all()
 
     result = []
 

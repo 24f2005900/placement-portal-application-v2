@@ -34,7 +34,24 @@ def companies():
     if not admin_required():
         return jsonify({"companies": []}), 403
 
-    companies = Company.query.all()
+    query = Company.query
+
+    approved = request.args.get("approved")
+    name = request.args.get("name")
+
+    if approved is not None:
+        query = query.filter(
+            Company.approved == (
+                approved.lower() == "true"
+            )
+        )
+
+    if name:
+        query = query.filter(
+            Company.company_name.ilike(f"%{name}%")
+        )
+
+    companies = query.all()
 
     return jsonify([c.to_dict() for c in companies])
 
