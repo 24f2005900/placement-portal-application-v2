@@ -5,7 +5,7 @@ from flask_jwt_extended import jwt_required, get_jwt
 
 from app.extensions import db
 from app.models import User, Company, Drive
-from app.models.application import Application
+from app.models.application import Application, ApplicationStatus
 from app.models.student import Student
 
 company_bp = Blueprint("company", __name__, url_prefix="/api/company")
@@ -144,3 +144,54 @@ def view_applicants():
         })
 
     return jsonify(result), 200
+
+@company_bp.put("/applications/<int:application_id>")
+@jwt_required()
+def update_application_status(application_id):
+
+    company = get_company()
+
+    if not company:
+        return jsonify({"message": "Unauthorized"}), 403
+
+    application = (
+        Application.query
+        .join(Application.drive)
+        .filter(
+            Application.id == application_id,
+            Drive.company_id == company.id
+        )
+        .first()
+    )
+
+    if not application:
+        return jsonify({
+            "message": "Application not found"
+        }), 404
+
+    data = request.get_json()
+
+    status = data.get("status")
+    remarks = data.get("remarks")
+
+    if not status:
+        return jsonify({
+            "message": "Status is required"
+        }), 400
+
+    try:
+        application.status = ApplicationStatus(status)
+    except ValueError:
+        return jsonify({
+            "message": "Invalid application status"
+        }), 400
+
+    if remarks is not None:
+        application.remarks = remarks
+
+    db.session.commit()
+
+    return jsonify({
+        "message": "Application updated successfully",
+        "application": application.to_dict()
+    }), 200
