@@ -5,6 +5,8 @@ from .extensions import db
 from .extensions import jwt
 from .extensions import migrate
 from .extensions import bcrypt
+from app.models import *
+from app.routes.auth import auth_bp
 
 def create_app():
 
@@ -20,4 +22,11 @@ def create_app():
 
     bcrypt.init_app(app)
 
+    from app.seed import create_admin
+
+    with app.app_context():
+        create_admin()
+
+    app.register_blueprint(auth_bp)
+    
     return app
