@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt
 
 from app.extensions import db
 from app.models import Student, Company, Drive, Application
+from app.cache import clear_cache
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/api/admin")
 
@@ -161,6 +162,9 @@ def approve_drive(drive_id):
     drive.approved = True
 
     db.session.commit()
+
+    # approved drives changed, drop the cached list
+    clear_cache("approved_drives")
 
     return jsonify({"message": "Drive approved"})
 

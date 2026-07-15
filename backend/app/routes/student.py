@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt
 
 from app.extensions import db
 from app.models import User, Student, Drive, Application
+from app.cache import get_cache, set_cache
 
 student_bp = Blueprint(
     "student",
@@ -31,16 +32,23 @@ def dashboard():
 
     student = get_student()
 
-    drives = Drive.query.filter_by(
-        approved=True
-    ).all()
+    # try the cache first, it's the same approved drives list for everyone
+    drive_list = get_cache("approved_drives")
 
-    drive_list = []
+    if drive_list is None:
 
-    for d in drives:
-        item = d.to_dict()
-        item["company_name"] = d.company.company_name
-        drive_list.append(item)
+        drives = Drive.query.filter_by(
+            approved=True
+        ).all()
+
+        drive_list = []
+
+        for d in drives:
+            item = d.to_dict()
+            item["company_name"] = d.company.company_name
+            drive_list.append(item)
+
+        set_cache("approved_drives", drive_list, ttl=60)
 
     return jsonify({
         "student": student.to_dict(),
