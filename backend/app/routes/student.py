@@ -35,9 +35,16 @@ def dashboard():
         approved=True
     ).all()
 
+    drive_list = []
+
+    for d in drives:
+        item = d.to_dict()
+        item["company_name"] = d.company.company_name
+        drive_list.append(item)
+
     return jsonify({
         "student": student.to_dict(),
-        "drives": [d.to_dict() for d in drives]
+        "drives": drive_list
     })
 
 

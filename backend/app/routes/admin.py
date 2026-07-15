@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt
 
 from app.extensions import db
@@ -65,7 +65,44 @@ def students():
 
     students = Student.query.all()
 
-    return jsonify([s.to_dict() for s in students])
+    result = []
+
+    for s in students:
+        item = s.to_dict()
+        item["is_active"] = s.user.is_active
+        result.append(item)
+
+    return jsonify(result)
+
+@admin_bp.get("/drives")
+@jwt_required()
+def drives():
+
+    if not admin_required():
+        return jsonify([]), 403
+
+    query = Drive.query
+
+    approved = request.args.get("approved")
+
+    if approved is not None:
+        query = query.filter(
+            Drive.approved == (
+                approved.lower() == "true"
+            )
+        )
+
+    drives = query.all()
+
+    result = []
+
+    for drive in drives:
+        item = drive.to_dict()
+        item["company_name"] = drive.company.company_name
+        result.append(item)
+
+    return jsonify(result)
+
 
 @admin_bp.put("/company/<int:company_id>/approve")
 @jwt_required()
@@ -97,6 +134,21 @@ def blacklist_company(company_id):
 
     return jsonify({"message": "Company blacklisted"})
 
+@admin_bp.put("/company/<int:company_id>/whitelist")
+@jwt_required()
+def whitelist_company(company_id):
+
+    if not admin_required():
+        return jsonify({"message": "Forbidden"}), 403
+
+    company = Company.query.get_or_404(company_id)
+
+    company.blacklisted = False
+
+    db.session.commit()
+
+    return jsonify({"message": "Company removed from blacklist"})
+
 @admin_bp.put("/drive/<int:drive_id>/approve")
 @jwt_required()
 def approve_drive(drive_id):
@@ -126,3 +178,18 @@ def deactivate_student(student_id):
     db.session.commit()
 
     return jsonify({"message": "Student deactivated"})
+
+@admin_bp.put("/student/<int:student_id>/activate")
+@jwt_required()
+def activate_student(student_id):
+
+    if not admin_required():
+        return jsonify({"message": "Forbidden"}), 403
+
+    student = Student.query.get_or_404(student_id)
+
+    student.user.is_active = True
+
+    db.session.commit()
+
+    return jsonify({"message": "Student activated"})
