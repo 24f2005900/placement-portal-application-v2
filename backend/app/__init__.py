@@ -7,6 +7,7 @@ from .extensions import migrate
 from .extensions import bcrypt
 from app.models import *
 from app.routes.auth import auth_bp
+from app.routes.admin import admin_bp
 
 def create_app():
 
@@ -28,5 +29,6 @@ def create_app():
         create_admin()
 
     app.register_blueprint(auth_bp)
+    app.register_blueprint(admin_bp)
     
     return app

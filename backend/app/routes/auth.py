@@ -85,7 +85,9 @@ def login():
     data = request.get_json()
 
     user = User.query.filter_by(
-        username=data["email"]
+        username=data["username"]
+        if "username" in data
+        else data["email"]
     ).first()
 
     if not user:

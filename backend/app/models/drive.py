@@ -21,6 +21,8 @@ class Drive(db.Model):
         nullable=False,
     )
 
+    approved = db.Column(db.Boolean, default=False)
+
     title = db.Column(db.String(150), nullable=False)
 
     description = db.Column(db.Text)
@@ -55,6 +57,7 @@ class Drive(db.Model):
         return {
             "id": self.id,
             "company_id": self.company_id,
+            "approved": self.approved,
             "title": self.title,
             "description": self.description,
             "salary": self.salary,
