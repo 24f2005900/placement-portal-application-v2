@@ -5,6 +5,8 @@ from flask_jwt_extended import jwt_required, get_jwt
 
 from app.extensions import db
 from app.models import User, Company, Drive
+from app.models.application import Application
+from app.models.student import Student
 
 company_bp = Blueprint("company", __name__, url_prefix="/api/company")
 
@@ -94,3 +96,51 @@ def drives():
     return jsonify(
         [d.to_dict() for d in drives]
     )
+
+@company_bp.get("/applications")
+@jwt_required()
+def view_applicants():
+
+    company = get_company()
+
+    if not company:
+        return jsonify({"message": "Unauthorized"}), 403
+
+    applications = (
+        Application.query
+        .join(Application.drive)
+        .filter(Drive.company_id == company.id)
+        .all()
+    )
+
+    result = []
+
+    for application in applications:
+
+        student = application.student
+        drive = application.drive
+
+        result.append({
+            "application_id": application.id,
+            "status": application.status.value,
+            "applied_at": application.applied_at.isoformat(),
+
+            "student": {
+                "id": student.id,
+                "full_name": student.full_name,
+                "email": student.email,
+                "department": student.department,
+                "cgpa": student.cgpa,
+                "skills": student.skills,
+                "resume": student.resume,
+                "phone": student.phone,
+                "graduation_year": student.graduation_year,
+            },
+
+            "drive": {
+                "id": drive.id,
+                "title": drive.title
+            }
+        })
+
+    return jsonify(result), 200
